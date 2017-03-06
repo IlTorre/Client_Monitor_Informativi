@@ -1,6 +1,7 @@
 import os
 from urllib.request import urlopen
 import tkinter as tk
+from tkinter.font import Font
 
 from PIL import Image, ImageTk
 
@@ -89,35 +90,51 @@ class MiaApp():
         self.impostazioni = self.scarica_impostazioni(URL_IMPOSTAZIONI)
         self.root = tk.Tk()
 
+
+
+        #Creazione font
+        fonttitolo=Font(family="Calibri", size="25", weight="bold", underline=1)
+
+        #Costruzione della finestra
+        image = Image.open(os.path.join("default","top.png"))
+        [imageSizeWidth, imageSizeHeight] = image.size
+
         # Costanti di configurazione
         PADDING = 5
         MAX_WIDTH = self.root.winfo_screenwidth()
-        MAX_HEIGHT = self.root.winfo_screenheight()
-        self.MAX_HEIGHT_IMAGE = MAX_HEIGHT - PADDING * 4
-        self.MAX_WIDTH_IMAGE = MAX_WIDTH / 2 - PADDING * 4
 
-        #Costruzione della finestra
-        self.titolo = tk.Label(text="Nessuna notizia disponibile")
+        heightbanner = int(MAX_WIDTH/imageSizeWidth*imageSizeHeight)
+
+        MAX_HEIGHT = self.root.winfo_screenheight() - PADDING - heightbanner
+        self.MAX_HEIGHT_IMAGE = MAX_HEIGHT - PADDING * 6 - 100
+        self.MAX_WIDTH_IMAGE = int(MAX_WIDTH / 2 - PADDING * 4)
+
+        image=image.resize((MAX_WIDTH, heightbanner), Image.ANTIALIAS)
+        ban = ImageTk.PhotoImage(image)
+        topbanner=tk.Label(image=ban)
+        self.titolo = tk.Label(text="Nessuna notizia disponibile",
+                               font=fonttitolo,
+                               fg="red")
         self.descrizione = tk.Label(text="Siamo spiacenti ma non è possibile visualizzare nessuna notizia.")
         self.news = tk.Label(text="Notizie in aggiornamento...")
-        image = Image.open('default/vuoto.jpg')
+        image = Image.open("default/vuoto.jpg")
         image = self.ridimensiona_immagine(image, self.MAX_WIDTH_IMAGE, self.MAX_HEIGHT_IMAGE)
         photo = ImageTk.PhotoImage(image)
         self.immagine = tk.Label(image=photo)
 
         # Posizionamento
-        self.titolo.grid(row=0, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
-        self.descrizione.grid(row=1, column=0, sticky=tk.S, padx=PADDING, pady=PADDING)
-        self.immagine.grid(row=1, column=1, sticky=tk.S, padx=PADDING, pady=PADDING)
-        self.news.grid(row=2, column=0, sticky=tk.S, padx=PADDING, pady=PADDING)
+        topbanner.grid(row=0, column=0, columnspan=2, sticky=tk.S)
+        self.titolo.grid(row=1, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
+        self.descrizione.grid(row=2, column=0, sticky=tk.N, padx=PADDING, pady=PADDING)
+        self.immagine.grid(row=2, column=1, sticky=tk.S, padx=PADDING, pady=PADDING)
+        self.news.grid(row=3, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
 
         # Definisco le dimensioni di righe e colonne per far si che il layout sia definito in modo statico.
-        self.root.columnconfigure(0, weight=1, minsize=self.MAX_WIDTH_IMAGE)
-        self.root.columnconfigure(1, weight=1, minsize=self.MAX_WIDTH_IMAGE)
-        self.root.rowconfigure(0, weight=1)
+        self.root.rowconfigure(0,weight=1,minsize=heightbanner)
+        self.root.columnconfigure(0, weight=1, minsize=self.MAX_WIDTH_IMAGE + 2*PADDING)
+        self.root.columnconfigure(1, weight=1, minsize=self.MAX_WIDTH_IMAGE + 2*PADDING)
         self.root.rowconfigure(1, weight=1)
-        self.news.rowconfigure(0, weight=1)
-        self.news.columnconfigure(1, weight=1)
+        self.root.rowconfigure(2, weight=1)
 
         #scarico dati
         self.lista_news = self.scarica_dati(URL_NOTIZIE)
@@ -138,6 +155,11 @@ class MiaApp():
         self.titolo.configure(text=elemento['titolo'])
         self.descrizione.configure(text=elemento['descrizione'])
         self.immagine.configure(image=elemento['immagine'])
+        news=""
+        for i in self.lista_news:
+            news = news + i['titolo']+ " - "
+        news = news[:-3]
+        self.news.configure(text=news)
 
         if indice < len(self.lista_news)-1:
             indice = indice + 1
