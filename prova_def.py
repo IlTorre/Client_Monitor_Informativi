@@ -94,6 +94,7 @@ class MiaApp():
 
         #Creazione font
         fonttitolo=Font(family="Calibri", size="25", weight="bold", underline=1)
+        fontnews=Font(family="Calibri", size="15")
 
         #Costruzione della finestra
         image = Image.open(os.path.join("default","top.png"))
@@ -116,7 +117,9 @@ class MiaApp():
                                font=fonttitolo,
                                fg="red")
         self.descrizione = tk.Label(text="Siamo spiacenti ma non è possibile visualizzare nessuna notizia.")
-        self.news = tk.Label(text="Notizie in aggiornamento...")
+        self.news = tk.Label(text="Notizie in aggiornamento...",
+                             font=fontnews,
+                             bg="#0099CC")
         image = Image.open("default/vuoto.jpg")
         image = self.ridimensiona_immagine(image, self.MAX_WIDTH_IMAGE, self.MAX_HEIGHT_IMAGE)
         photo = ImageTk.PhotoImage(image)
@@ -127,7 +130,7 @@ class MiaApp():
         self.titolo.grid(row=1, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
         self.descrizione.grid(row=2, column=0, sticky=tk.N, padx=PADDING, pady=PADDING)
         self.immagine.grid(row=2, column=1, sticky=tk.S, padx=PADDING, pady=PADDING)
-        self.news.grid(row=3, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
+        self.news.grid(row=3, column=0, columnspan=2, sticky=tk.E+tk.W, padx=0, pady=PADDING)
 
         # Definisco le dimensioni di righe e colonne per far si che il layout sia definito in modo statico.
         self.root.rowconfigure(0,weight=1,minsize=heightbanner)
