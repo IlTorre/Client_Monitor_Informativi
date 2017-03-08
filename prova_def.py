@@ -45,17 +45,20 @@ class MiaApp():
         """
         Scarica le immagini dal server e ne effettua la copia nella memoria della macchina
         :param filename: il nome da dare al file
-        :return: il path del file salvato in locale
+        :return: il path del file salvato in locale oppure false in caso di errore di rete
         """
-        a, file_extension = os.path.splitext(img_url)
-        image_on_web = urlopen(img_url)
-        buf = image_on_web.read()
-        path = os.getcwd() + 'immagini'
-        path = os.path.join(os.getcwd(), 'immagini', str(filename) + file_extension)
-        downloaded_image = open(path, "wb")
-        downloaded_image.write(buf)
-        downloaded_image.close()
-        image_on_web.close()
+        try:
+            a, file_extension = os.path.splitext(img_url)
+            image_on_web = urlopen(img_url)
+            buf = image_on_web.read()
+            path = os.getcwd() + 'immagini'
+            path = os.path.join(os.getcwd(), 'immagini', str(filename) + file_extension)
+            downloaded_image = open(path, "wb")
+            downloaded_image.write(buf)
+            downloaded_image.close()
+            image_on_web.close()
+        except Exception:
+            return False
         return path
 
 
@@ -69,10 +72,12 @@ class MiaApp():
         #scalo immagine
 
         lista_temp=[{'id':1,'titolo':'Bel tempo domani','descrizione':'Il tempo domani sarà soleggiato','immagine':'http://www.astronomy2009.it/wp-content/uploads/2016/05/sole.jpg'},
-                    {'id':2,'titolo':'Ultima sfilata di carnevale','descrizione':'Domenica si terrà l''ultima sfilata di carnevale','immagine':'http://www.guidatorino.com/wp-content/uploads/2016/01/carnevale-piemonte.jpg'}]
+                    {'id':2,'titolo':'Ultima sfilata di carnevale','descrizione':'Domenica si terrà l''ultima sfilata di carnevale\nQuindi tutti in piazza','immagine':'http://www.guidatorino.com/wp-content/uploads/2016/01/carnevale-piemonte.jpg'}]
         lista_news=[]
         for i in lista_temp:
             image = self.download_immagine(i['immagine'],i['id'])
+            if not image:
+                image=os.path.join("default","vuoto.jpg")
             del i['immagine']
             image = Image.open(image)
             image = self.ridimensiona_immagine(image, self.MAX_WIDTH_IMAGE, self.MAX_HEIGHT_IMAGE)
@@ -81,6 +86,30 @@ class MiaApp():
             lista_news.append(i)
         return lista_news
 
+    def conta_righe(self,testo,dim_riga):
+        """
+        Funziona che conta il numero dirighe che occupa una stringa di testo
+        :param testo: il testo el quale si vuole stimare il numero di righe
+        :param dim_riga: il numero di caratteri che può contenere una riga
+        :return: il numero di righe
+        """
+        if not testo or not dim_riga:
+            return 0
+        else:
+            righe=0
+            caratteri_letti=0
+            for i in range(len(testo)-1):
+                if testo[i]=='\n':
+                    righe = righe +1
+                else:
+                    caratteri_letti = caratteri_letti + 1
+                if caratteri_letti >= dim_riga:
+                    righe = righe + 1
+                    caratteri_letti = 0
+            if caratteri_letti > 0:
+                righe = righe + 1
+            return righe
+
     def __init__(self, id_monitor):
 
         _URL_BASE_ = "http://127.0.0.1:8000"
@@ -88,15 +117,19 @@ class MiaApp():
         URL_IMPOSTAZIONI = _URL_BASE_ + "/monitor/impostazioni/"
 
         self.impostazioni = self.scarica_impostazioni(URL_IMPOSTAZIONI)
+
+        # Costruzione della finestra
         self.root = tk.Tk()
+        self.root.attributes('-fullscreen', True)
 
 
 
         #Creazione font
-        fonttitolo=Font(family="Calibri", size="25", weight="bold", underline=1)
-        fontnews=Font(family="Calibri", size="15")
+        fonttitolo=Font(family="Calibri", size="35", weight="bold", underline=1)
+        fontdescrizione=Font(family="Calibri", size="20")
+        fontnews=Font(family="Calibri", size="18", slant="italic", weight="bold")
 
-        #Costruzione della finestra
+
         image = Image.open(os.path.join("default","top.png"))
         [imageSizeWidth, imageSizeHeight] = image.size
 
@@ -113,22 +146,25 @@ class MiaApp():
         image=image.resize((MAX_WIDTH, heightbanner), Image.ANTIALIAS)
         ban = ImageTk.PhotoImage(image)
         topbanner=tk.Label(image=ban)
+
+        #POPOLAMENTO finestra
         self.titolo = tk.Label(text="Nessuna notizia disponibile",
                                font=fonttitolo,
                                fg="red")
-        self.descrizione = tk.Label(text="Siamo spiacenti ma non è possibile visualizzare nessuna notizia.")
+        self.descrizione = tk.Label(text="Siamo spiacenti ma non è possibile visualizzare nessuna notizia.",
+                                    font=fontdescrizione)
         self.news = tk.Label(text="Notizie in aggiornamento...",
                              font=fontnews,
                              bg="#0099CC")
-        image = Image.open("default/vuoto.jpg")
+        image = Image.open(os.path.join("default","vuoto.jpg"))
         image = self.ridimensiona_immagine(image, self.MAX_WIDTH_IMAGE, self.MAX_HEIGHT_IMAGE)
         photo = ImageTk.PhotoImage(image)
         self.immagine = tk.Label(image=photo)
 
         # Posizionamento
-        topbanner.grid(row=0, column=0, columnspan=2, sticky=tk.S)
+        topbanner.grid(row=0, column=0, columnspan=2, sticky=tk.N)
         self.titolo.grid(row=1, column=0, columnspan=2, sticky=tk.S, padx=PADDING, pady=PADDING)
-        self.descrizione.grid(row=2, column=0, sticky=tk.N, padx=PADDING, pady=PADDING)
+        self.descrizione.grid(row=2, column=0, sticky=tk.N+tk.S, padx=PADDING, pady=PADDING)
         self.immagine.grid(row=2, column=1, sticky=tk.S, padx=PADDING, pady=PADDING)
         self.news.grid(row=3, column=0, columnspan=2, sticky=tk.E+tk.W, padx=0, pady=PADDING)
 
@@ -143,7 +179,6 @@ class MiaApp():
         self.lista_news = self.scarica_dati(URL_NOTIZIE)
 
         #Avvio
-        #self.indice = 0
         self.aggiorna_schermo(0)
         self.root.mainloop()
 
